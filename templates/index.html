@@ -1,254 +1,136 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klasifikasi Varietas Mangga Lokal</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            color: #333;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Klasifikasi Mangga</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
 
-        .container {
-            background-color: #ffffff;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-            text-align: center;
-            max-width: 600px;
-            width: 90%;
-            position: relative;
-        }
+    .container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 600px;
+      text-align: center;
+    }
 
-        .image-display-area {
-            width: 100%;
-            height: 250px;
-            border: 2px dashed #cccccc;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 25px;
-            overflow: hidden;
-            background-color: #f9f9f9;
-            position: relative;
-        }
+    h1 {
+      margin-bottom: 0.5rem;
+    }
 
-        .image-display-area img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            display: none;
-        }
+    p {
+      color: #555;
+    }
 
-        .placeholder-text {
-            color: #888;
-            font-size: 1.1em;
-        }
+    .preview-area {
+      margin: 20px auto;
+      width: 100%;
+      max-height: 250px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
 
-        .button-group {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
+    .preview-area img {
+      max-width: 100%;
+      max-height: 240px;
+      object-fit: contain;
+    }
 
-        button {
-            background-color: #e0e0e0;
-            color: #333;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            min-width: 120px;
-        }
+    input[type="file"] {
+      margin-top: 15px;
+    }
 
-        button.primary {
-            background-color: #007bff;
-            color: white;
-        }
+    .button {
+      margin-top: 20px;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      color: #fff;
+      background-color: #007bff;
+      transition: background-color 0.3s ease;
+    }
 
-        button.primary:hover {
-            background-color: #0056b3;
-        }
+    .button:hover {
+      background-color: #0056b3;
+    }
 
-        button:hover:not(.primary) {
-            background-color: #d0d0d0;
-        }
+    .download-button {
+      background-color: #28a745;
+      margin-top: 30px;
+    }
 
-        .error-message {
-            color: #dc3545;
-            margin-top: 15px;
-            font-size: 0.9em;
-        }
+    .download-button:hover {
+      background-color: #1e7e34;
+    }
 
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            visibility: hidden;
-            opacity: 0;
-            transition: visibility 0s, opacity 0.3s ease-in-out;
-        }
+    .error {
+      color: red;
+      margin-top: 10px;
+      font-weight: bold;
+    }
 
-        .loading-overlay.active {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .spinner {
-            border: 8px solid #f3f3f3;
-            border-top: 8px solid #007bff;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .download-form {
-            margin-top: 30px;
-        }
-
-        .download-form button {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .download-form button:hover {
-            background-color: #1e7e34;
-        }
-    </style>
+    .result {
+      margin-top: 20px;
+      font-size: 1.1rem;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Klasifikasi Varietas Mangga Lokal</h1>
-        <p>Unggah gambar mangga untuk memulai proses prediksi.</p>
-        
-        <form id="uploadForm" action="/predict" method="POST" enctype="multipart/form-data">
-            <div class="image-display-area">
-                <img id="image-preview" src="#" alt="Pratinjau Gambar">
-                <span id="placeholder-text" class="placeholder-text">Area Pratinjau Gambar</span>
-            </div>
+  <div class="container">
+    <h1>Klasifikasi Varietas Mangga Lokal</h1>
+    <p>Unggah gambar mangga untuk memulai proses prediksi.</p>
 
-            <input type="file" id="mangoImage" name="file" accept="image/*" style="display: none;">
-            
-            <div class="button-group">
-                <button type="button" onclick="triggerFileInput()">Upload</button>
-                <button type="submit" class="primary">Proses</button>
-            </div>
+    <!-- Form Upload dan Prediksi -->
+    <form method="POST" action="/predict" enctype="multipart/form-data">
+      <div class="preview-area" id="previewArea">
+        {% if image_url %}
+          <img src="{{ image_url }}" alt="Preview Gambar">
+        {% else %}
+          <span style="color:#888;">Area Pratinjau Gambar</span>
+        {% endif %}
+      </div>
 
-            <div id="clientErrorMessage" class="error-message" style="display: none;"></div>
-            {% if error %}
-                <div class="error-message">{{ error }}</div>
-            {% endif %}
-        </form>
+      <input type="file" name="file" accept="image/*" required>
 
-        <!-- Tombol download dataset manual -->
-        <form action="/download_dataset" method="get" class="download-form">
-            <button type="submit">Download Dataset Manual</button>
-        </form>
-    </div>
+      <br>
+      <button type="submit" class="button">🔍 Proses Gambar</button>
 
-    <!-- Loading Spinner -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="spinner"></div>
-    </div>
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
+    </form>
 
-    <script>
-        const mangoImageInput = document.getElementById('mangoImage');
-        const imagePreview = document.getElementById('image-preview');
-        const placeholderText = document.getElementById('placeholder-text');
-        const uploadForm = document.getElementById('uploadForm');
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        const clientErrorMessage = document.getElementById('clientErrorMessage');
+    <!-- Tombol download dataset manual -->
+    <form action="/download_dataset" method="get">
+      <button type="submit" class="button download-button">📦 Download Dataset Manual</button>
+    </form>
 
-        function triggerFileInput() {
-            mangoImageInput.click();
-        }
-
-        function showErrorMessage(message) {
-            clientErrorMessage.textContent = message;
-            clientErrorMessage.style.display = 'block';
-        }
-
-        function hideErrorMessage() {
-            clientErrorMessage.textContent = '';
-            clientErrorMessage.style.display = 'none';
-        }
-
-        mangoImageInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                    imagePreview.style.display = 'block';
-                    placeholderText.style.display = 'none';
-                    hideErrorMessage();
-                };
-                reader.readAsDataURL(file);
-            } else {
-                imagePreview.style.display = 'none';
-                placeholderText.style.display = 'block';
-                imagePreview.src = '#';
-                showErrorMessage("Pilih gambar mangga terlebih dahulu.");
-            }
-        });
-
-        uploadForm.addEventListener('submit', async function(event) {
-            event.preventDefault();
-
-            if (!mangoImageInput.files || mangoImageInput.files.length === 0) {
-                showErrorMessage("Pilih gambar mangga terlebih dahulu sebelum memproses.");
-                return;
-            }
-
-            loadingOverlay.classList.add('active');
-            hideErrorMessage();
-
-            const formData = new FormData();
-            formData.append('file', mangoImageInput.files[0]);
-
-            try {
-                const response = await fetch(uploadForm.action, {
-                    method: uploadForm.method,
-                    body: formData,
-                });
-
-                if (response.ok) {
-                    window.location.href = response.url;
-                } else {
-                    const errorData = await response.json();
-                    showErrorMessage(errorData.error || "Terjadi kesalahan saat memproses gambar.");
-                }
-            } catch (error) {
-                console.error('Error during fetch:', error);
-                showErrorMessage("Terjadi kesalahan jaringan atau server tidak merespons.");
-            } finally {
-                loadingOverlay.classList.remove('active');
-            }
-        });
-    </script>
+    <!-- Hasil Prediksi -->
+    {% if prediction %}
+      <div class="result">
+        <strong>Prediksi:</strong> {{ prediction }}<br>
+        <strong>Kepercayaan:</strong> {{ confidence }}%
+      </div>
+    {% endif %}
+  </div>
 </body>
 </html>
