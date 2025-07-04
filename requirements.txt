@@ -1,0 +1,7 @@
+Flask
+gunicorn
+numpy
+pillow
+joblib
+opencv-python-headless
+requests

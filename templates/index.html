@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klasifikasi Varietas Mangga Lokal</title>
+    <style>
+        /* Styling dasar untuk body */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        /* Styling untuk container utama */
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            position: relative; /* Diperlukan untuk loading overlay */
+        }
+
+        /* Styling untuk area gambar/pratinjau */
+        .image-display-area {
+            width: 100%;
+            height: 250px;
+            border: 2px dashed #cccccc;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            overflow: hidden;
+            background-color: #f9f9f9;
+            position: relative;
+        }
+
+        .image-display-area img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        .image-display-area .placeholder-text {
+            color: #888;
+            font-size: 1.1em;
+        }
+
+        /* Styling untuk grup tombol */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        /* Styling untuk semua tombol */
+        button {
+            background-color: #e0e0e0;
+            color: #333;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            min-width: 120px;
+        }
+
+        /* Styling khusus untuk tombol primer (Proses) */
+        button.primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        button.primary:hover {
+            background-color: #0056b3;
+        }
+
+        /* Styling hover untuk tombol non-primer */
+        button:hover:not(.primary) {
+            background-color: #d0d0d0;
+        }
+        
+        /* Styling untuk pesan error */
+        .error-message {
+            color: #dc3545;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        /* --- Styling untuk Loading Overlay --- */
+        .loading-overlay {
+            position: fixed; /* Menggunakan fixed agar menutupi seluruh viewport */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8); /* Latar belakang semi-transparan */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Pastikan di atas elemen lain */
+            visibility: hidden; /* Sembunyikan secara default */
+            opacity: 0;
+            transition: visibility 0s, opacity 0.3s ease-in-out;
+        }
+
+        .loading-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .spinner {
+            border: 8px solid #f3f3f3; /* Light grey */
+            border-top: 8px solid #007bff; /* Blue */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite; /* Animasi berputar */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Klasifikasi Varietas Mangga Lokal</h1>
+        <p>Unggah gambar mangga untuk memulai proses prediksi.</p>
+        
+        <!-- Form untuk mengunggah gambar ke endpoint /predict -->
+        <form id="uploadForm" action="/predict" method="POST" enctype="multipart/form-data">
+            <div class="image-display-area">
+                <img id="image-preview" src="#" alt="Pratinjau Gambar">
+                <span id="placeholder-text" class="placeholder-text">Area Pratinjau Gambar</span>
+            </div>
+            
+            <!-- Input file sebenarnya, disembunyikan agar kita bisa pakai tombol kustom -->
+            <input type="file" id="mangoImage" name="file" accept="image/*" style="display: none;">
+            
+            <div class="button-group">
+                <!-- Tombol "Upload" kustom, memicu klik pada input file tersembunyi -->
+                <button type="button" onclick="triggerFileInput()">Upload</button>
+                <!-- Tombol "Proses" untuk submit form -->
+                <button type="submit" class="primary">Proses</button>
+            </div>
+            
+            <!-- Area untuk menampilkan pesan error -->
+            <div id="clientErrorMessage" class="error-message" style="display: none;"></div>
+            {# Ini adalah komentar Jinja2 untuk blok if #}
+            {% if error %}
+                <div class="error-message">{{ error }}</div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        // Mengambil elemen-elemen DOM yang dibutuhkan
+        const mangoImageInput = document.getElementById('mangoImage');
+        const imagePreview = document.getElementById('image-preview');
+        const placeholderText = document.getElementById('placeholder-text');
+        const uploadForm = document.getElementById('uploadForm');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const clientErrorMessage = document.getElementById('clientErrorMessage');
+
+        // Fungsi untuk memicu klik pada input file tersembunyi
+        function triggerFileInput() {
+            mangoImageInput.click();
+        }
+
+        // Fungsi untuk menampilkan pesan error
+        function showErrorMessage(message) {
+            clientErrorMessage.textContent = message;
+            clientErrorMessage.style.display = 'block';
+        }
+
+        // Fungsi untuk menyembunyikan pesan error
+        function hideErrorMessage() {
+            clientErrorMessage.textContent = '';
+            clientErrorMessage.style.display = 'none';
+        }
+
+        // Event listener saat file dipilih pada input file
+        mangoImageInput.addEventListener('change', function(event) {
+            const file = event.target.files[0]; // Ambil file pertama yang dipilih
+            if (file) {
+                const reader = new FileReader(); // Buat objek FileReader baru
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result; // Set src gambar ke data URL file
+                    imagePreview.style.display = 'block'; // Tampilkan elemen gambar
+                    placeholderText.style.display = 'none'; // Sembunyikan teks placeholder
+                    hideErrorMessage(); // Sembunyikan pesan error jika ada file baru
+                };
+                reader.readAsDataURL(file); // Baca file sebagai Data URL
+            } else {
+                // Jika tidak ada file yang dipilih, kembalikan tampilan ke default
+                imagePreview.style.display = 'none';
+                placeholderText.style.display = 'block';
+                imagePreview.src = '#';
+                showErrorMessage("Pilih gambar mangga terlebih dahulu."); // Tampilkan pesan error
+            }
+        });
+
+        // Event listener saat form disubmit
+        uploadForm.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Mencegah submit form default (full page reload)
+
+            // Periksa apakah ada file yang dipilih sebelum menampilkan loading
+            if (!mangoImageInput.files || mangoImageInput.files.length === 0) {
+                showErrorMessage("Pilih gambar mangga terlebih dahulu sebelum memproses.");
+                return; // Hentikan proses jika tidak ada file
+            }
+
+            loadingOverlay.classList.add('active'); // Tampilkan loading overlay
+            hideErrorMessage(); // Sembunyikan pesan error sebelumnya
+
+            const formData = new FormData();
+            formData.append('file', mangoImageInput.files[0]); // Tambahkan file ke FormData
+
+            try {
+                const response = await fetch(uploadForm.action, {
+                    method: uploadForm.method,
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    // Jika respons sukses (status 200-299), redirect ke halaman hasil
+                    // Asumsi Flask akan merespons dengan redirect atau mengembalikan URL hasil
+                    // Jika Flask mengembalikan JSON, Anda perlu mengurai JSON tersebut
+                    // dan mengarahkan ke URL yang sesuai.
+                    // Untuk kasus ini, karena Flask akan merender halaman baru, kita bisa langsung redirect.
+                    window.location.href = response.url; // Mengikuti redirect dari Flask
+                } else {
+                    // Jika ada error dari server
+                    const errorData = await response.json(); // Asumsi Flask mengembalikan JSON error
+                    showErrorMessage(errorData.error || "Terjadi kesalahan saat memproses gambar.");
+                }
+            } catch (error) {
+                console.error('Error during fetch:', error);
+                showErrorMessage("Terjadi kesalahan jaringan atau server tidak merespons.");
+            } finally {
+                loadingOverlay.classList.remove('active'); // Sembunyikan loading overlay setelah selesai (baik sukses atau gagal)
+            }
+        });
+    </script>
+</body>
+</html>
