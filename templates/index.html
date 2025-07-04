@@ -4,133 +4,77 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Klasifikasi Mangga</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    /* Custom font for Inter, if not already available */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f0f2f5;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .container {
-      background-color: white;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-      width: 90%;
-      max-width: 600px;
-      text-align: center;
-    }
-
-    h1 {
-      margin-bottom: 0.5rem;
-    }
-
-    p {
-      color: #555;
-    }
-
-    .preview-area {
-      margin: 20px auto;
-      width: 100%;
-      max-height: 250px;
-      border: 2px dashed #ccc;
-      border-radius: 8px;
-      background-color: #f9f9f9;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
-
-    .preview-area img {
-      max-width: 100%;
-      max-height: 240px;
-      object-fit: contain;
-    }
-
-    input[type="file"] {
-      margin-top: 15px;
-    }
-
-    .button {
-      margin-top: 20px;
-      padding: 12px 25px;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      cursor: pointer;
-      color: #fff;
-      background-color: #007bff;
-      transition: background-color 0.3s ease;
-    }
-
-    .button:hover {
-      background-color: #0056b3;
-    }
-
-    .download-button {
-      background-color: #28a745;
-      margin-top: 30px;
-    }
-
-    .download-button:hover {
-      background-color: #1e7e34;
-    }
-
-    .error {
-      color: red;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-
-    .result {
-      margin-top: 20px;
-      font-size: 1.1rem;
+      font-family: 'Inter', sans-serif;
     }
   </style>
 </head>
-<body>
-  <div class="container">
-    <h1>Klasifikasi Varietas Mangga Lokal</h1>
-    <p>Unggah gambar mangga untuk memulai proses prediksi.</p>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white p-8 md:p-12 rounded-xl shadow-xl w-full max-w-md text-center">
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Klasifikasi Varietas Mangga</h1>
+    <p class="text-gray-600 mb-6">Unggah gambar mangga untuk memulai proses prediksi.</p>
 
     <!-- Form Upload dan Prediksi -->
     <form method="POST" action="/predict" enctype="multipart/form-data">
-      <div class="preview-area" id="previewArea">
+      <div id="previewArea" class="mt-6 mb-4 w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden bg-gray-50">
         {% if image_url %}
-          <img src="{{ image_url }}" alt="Preview Gambar">
+          <img src="{{ image_url }}" alt="Preview Gambar" class="max-w-full max-h-full object-contain rounded-lg">
         {% else %}
-          <span style="color:#888;">Area Pratinjau Gambar</span>
+          <span class="text-gray-500 text-lg">Area Pratinjau Gambar</span>
         {% endif %}
       </div>
 
-      <input type="file" name="file" accept="image/*" required>
-
+      <input type="file" name="file" id="fileInput" accept="image/*" required
+             class="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100 cursor-pointer">
       <br>
-      <button type="submit" class="button">🔍 Proses Gambar</button>
-
+      <button type="submit" class="mt-6 w-full py-3 px-6 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+        🔍 Proses Gambar
+      </button>
       {% if error %}
-        <div class="error">{{ error }}</div>
+        <div class="text-red-600 mt-4 font-semibold">{{ error }}</div>
       {% endif %}
-    </form>
-
-    <!-- Tombol download dataset manual -->
-    <form action="/download_dataset" method="get">
-      <button type="submit" class="button download-button">📦 Download Dataset Manual</button>
     </form>
 
     <!-- Hasil Prediksi -->
     {% if prediction %}
-      <div class="result">
-        <strong>Prediksi:</strong> {{ prediction }}<br>
-        <strong>Kepercayaan:</strong> {{ confidence }}%
+      <div class="result mt-6 p-4 bg-blue-50 rounded-lg text-left">
+        <strong class="text-blue-800">Prediksi:</strong> <span class="text-gray-700">{{ prediction }}</span><br>
+        <strong class="text-blue-800">Kepercayaan:</strong> <span class="text-gray-700">{{ confidence }}%</span>
       </div>
     {% endif %}
   </div>
+
+  <script>
+    // JavaScript for image preview
+    document.getElementById('fileInput').addEventListener('change', function(event) {
+      const previewArea = document.getElementById('previewArea');
+      previewArea.innerHTML = ''; // Clear previous content
+
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.alt = "Preview Gambar";
+          img.className = "max-w-full max-h-full object-contain rounded-lg";
+          previewArea.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        previewArea.innerHTML = '<span class="text-gray-500 text-lg">Area Pratinjau Gambar</span>';
+      }
+    });
+  </script>
 </body>
 </html>
