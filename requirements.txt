@@ -1,7 +1,7 @@
-Flask
-gunicorn
+scikit-learn
+joblib
 numpy
 pillow
-joblib
 opencv-python-headless
-requests
+flask
+gunicorn
