@@ -1,7 +1,6 @@
 import os
 from flask import Flask, request, render_template, jsonify, send_from_directory
 from utils.download_dataset import download_dataset
-download_dataset()
 import cv2
 import numpy as np
 import joblib
