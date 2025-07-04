@@ -1,101 +1,64 @@
+from flask import Flask, render_template, request, jsonify
 import os
-from flask import Flask, request, render_template, jsonify, send_from_directory
 from utils.download_dataset import download_dataset
-import cv2
+from werkzeug.utils import secure_filename
 import numpy as np
-import joblib
+import cv2
 from PIL import Image
-import io
-import uuid # Untuk menghasilkan nama file unik
+import joblib
 
 app = Flask(__name__)
-
 UPLOAD_FOLDER = 'uploaded_images'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-IMG_SIZE = 100
+# Buat folder upload jika belum ada
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-MODEL_PATH = 'models/svm_model_mangga.pkl'
-LABEL_ENCODER_PATH = 'models/label_encoder.pkl'
-# SCALER_PATH tidak ada di versi ini
-
-# Muat model dan encoder saat aplikasi dimulai
-model = None
-le = None
-# scaler = None # Scaler tidak dimuat di versi ini
+# Load model dan label encoder
 try:
-    model = joblib.load(MODEL_PATH)
-    le = joblib.load(LABEL_ENCODER_PATH)
+    model = joblib.load('models/mango_model.pkl')
+    label_encoder = joblib.load('models/label_encoder.pkl')
     print("Model dan LabelEncoder berhasil dimuat.")
-except FileNotFoundError:
-    print(f"Error: Pastikan file '{MODEL_PATH}' dan '{LABEL_ENCODER_PATH}' ada di folder 'models'.")
-    print("Silakan jalankan 'traintest.py' terlebih dahulu untuk melatih dan menyimpan model.")
 except Exception as e:
-    print(f"Error tidak terduga saat memuat model/encoder: {e}")
+    print("Error tidak terduga saat memuat model/encoder:", e)
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/uploaded_images/<filename>')
-def serve_uploaded_image(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-
 @app.route('/predict', methods=['POST'])
 def predict():
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            return render_template('index.html', error='Tidak ada file yang diunggah.'), 400
-        
-        file = request.files['file']
-        
-        if file.filename == '':
-            return render_template('index.html', error='Tidak ada file yang dipilih.'), 400
-        
-        # Di versi ini, kita hanya butuh model dan le, tidak perlu scaler
-        if file and model and le: 
-            try:
-                filename = str(uuid.uuid4()) + os.path.splitext(file.filename)[1]
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                image_url = f'/uploaded_images/{filename}'
+    if 'file' not in request.files:
+        return 'Tidak ada file yang diunggah', 400
 
-                img_pil = Image.open(filepath).convert("L") 
-                img_cv2_grayscale = np.array(img_pil.resize((IMG_SIZE, IMG_SIZE)))
+    file = request.files['file']
+    if file.filename == '':
+        return 'Nama file kosong', 400
 
-                # >>>>>> Tidak ada Ekstraksi Fitur LBP atau Penskalaan di sini <<<<<<
-                # Fitur adalah pixel values mentah yang diratakan
-                features = img_cv2_grayscale.flatten()
-                features = features.reshape(1, -1) # Reshape untuk input model
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(filepath)
 
-                # DEBUGGING: Print jumlah fitur yang dihasilkan di app.py
-                print(f"DEBUG APP.PY: Fitur dihasilkan (Pixel values): {features.shape[1]} fitur.")
-                
-                # Melakukan prediksi
-                pred_label_idx = model.predict(features)[0] 
-                pred_proba_scores = model.decision_function(features)
-                
-                exp_scores = np.exp(pred_proba_scores - np.max(pred_proba_scores))
-                probabilities = exp_scores / np.sum(exp_scores)
-                confidence_percentage = np.max(probabilities) * 100 
+    try:
+        # Baca gambar dan ubah ukuran
+        image = Image.open(filepath).convert('RGB')
+        image = image.resize((100, 100))  # Sesuaikan dengan input model
+        image_array = np.array(image).flatten().reshape(1, -1)
 
-                pred_label = le.inverse_transform([pred_label_idx])[0]
+        prediction = model.predict(image_array)
+        predicted_label = label_encoder.inverse_transform(prediction)[0]
 
-                return render_template('results.html', 
-                                       image_url=image_url, 
-                                       prediction=pred_label, 
-                                       confidence=round(confidence_percentage, 2))
+        return render_template('index.html', prediction=predicted_label, image_path=filepath)
+    except Exception as e:
+        return f'Error saat memproses gambar: {e}', 500
 
-            except Exception as e:
-                print(f"Error saat memproses gambar atau prediksi: {e}")
-                return render_template('index.html', error=f'Gagal memproses gambar: {e}'), 500
-        else:
-            return render_template('index.html', error='Model atau LabelEncoder belum dimuat dengan benar. Periksa log server aplikasi.'), 500
-    
-    return render_template('index.html', error='Metode tidak diizinkan. Mohon gunakan POST untuk upload.'), 405
+@app.route('/download_dataset')
+def download_dataset_route():
+    try:
+        download_dataset()
+        return jsonify({'message': 'Dataset berhasil didownload dan diekstrak.'})
+    except Exception as e:
+        return jsonify({'error': f'Gagal download dataset: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True)
