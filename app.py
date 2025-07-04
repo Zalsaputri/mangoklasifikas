@@ -1,64 +1,86 @@
-from flask import Flask, render_template, request, jsonify
 import os
-from utils.download_dataset import download_dataset
-from werkzeug.utils import secure_filename
-import numpy as np
-import cv2
+import uuid
+from flask import Flask, render_template, request, send_from_directory, jsonify
 from PIL import Image
+import numpy as np
 import joblib
+import cv2
+from utils.download_dataset import download_dataset
 
 app = Flask(__name__)
+
+# ====== Konfigurasi ======
 UPLOAD_FOLDER = 'uploaded_images'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Buat folder upload jika belum ada
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+MODEL_PATH = 'models/svm_model_mangga.pkl'
+LABEL_PATH = 'models/label_encoder.pkl'
+IMG_SIZE = 100
 
-# Load model dan label encoder
+# ====== Load Model ======
+model = None
+le = None
+
 try:
-    model = joblib.load('models/mango_model.pkl')
-    label_encoder = joblib.load('models/label_encoder.pkl')
-    print("Model dan LabelEncoder berhasil dimuat.")
+    model = joblib.load(MODEL_PATH)
+    le = joblib.load(LABEL_PATH)
+    print("✅ Model dan LabelEncoder berhasil dimuat.")
 except Exception as e:
-    print("Error tidak terduga saat memuat model/encoder:", e)
+    print(f"❌ Gagal memuat model: {e}")
 
+# ====== Halaman Utama ======
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# ====== Endpoint Prediksi ======
 @app.route('/predict', methods=['POST'])
 def predict():
-    if 'file' not in request.files:
-        return 'Tidak ada file yang diunggah', 400
+    if 'file' not in request.files or file := request.files['file']:
+        if file.filename == '':
+            return render_template('index.html', error='Tidak ada file dipilih.'), 400
+        
+        try:
+            # Simpan file
+            filename = f"{uuid.uuid4()}{os.path.splitext(file.filename)[1]}"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            image_url = f'/uploaded_images/{filename}'
 
-    file = request.files['file']
-    if file.filename == '':
-        return 'Nama file kosong', 400
+            # Proses gambar
+            img = Image.open(filepath).convert("L").resize((IMG_SIZE, IMG_SIZE))
+            features = np.array(img).flatten().reshape(1, -1)
 
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(filepath)
+            # Prediksi
+            pred_idx = model.predict(features)[0]
+            scores = model.decision_function(features)
+            probs = np.exp(scores - np.max(scores)) / np.sum(np.exp(scores - np.max(scores)))
+            confidence = np.max(probs) * 100
+            label = le.inverse_transform([pred_idx])[0]
 
-    try:
-        # Baca gambar dan ubah ukuran
-        image = Image.open(filepath).convert('RGB')
-        image = image.resize((100, 100))  # Sesuaikan dengan input model
-        image_array = np.array(image).flatten().reshape(1, -1)
+            return render_template('index.html',
+                                   image_url=image_url,
+                                   prediction=label,
+                                   confidence=round(confidence, 2))
+        except Exception as e:
+            return render_template('index.html', error=f"Gagal memproses gambar: {e}")
+    return render_template('index.html', error='Tidak ada file yang valid.'), 400
 
-        prediction = model.predict(image_array)
-        predicted_label = label_encoder.inverse_transform(prediction)[0]
+# ====== Tampilkan Gambar Upload ======
+@app.route('/uploaded_images/<filename>')
+def uploaded_image(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-        return render_template('index.html', prediction=predicted_label, image_path=filepath)
-    except Exception as e:
-        return f'Error saat memproses gambar: {e}', 500
-
+# ====== Endpoint Manual Download Dataset ======
 @app.route('/download_dataset')
-def download_dataset_route():
+def manual_download_dataset():
     try:
         download_dataset()
-        return jsonify({'message': 'Dataset berhasil didownload dan diekstrak.'})
+        return jsonify({'message': 'Dataset berhasil diunduh dan diekstrak.'})
     except Exception as e:
-        return jsonify({'error': f'Gagal download dataset: {str(e)}'}), 500
+        return jsonify({'error': str(e)}), 500
 
+# ====== Jalankan ======
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
