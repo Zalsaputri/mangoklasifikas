@@ -4,131 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hasil Klasifikasi Mangga</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5; /* Latar belakang abu-abu muda */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            color: #333;
-        }
-
-        .container {
-            background-color: #ffffff;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            max-width: 800px; /* Lebar maksimum container */
-            width: 90%;
-            display: flex; /* Menggunakan flexbox untuk layout utama */
-            flex-direction: column; /* Konten di dalam kolom */
-            align-items: flex-start; /* Konten rata kiri */
-        }
-
-        .prediction-section {
-            display: flex; /* Menggunakan flexbox untuk gambar dan teks */
-            align-items: center; /* Pusat vertikal */
-            gap: 40px; /* Jarak antara gambar dan teks */
-            width: 100%;
-            margin-bottom: 30px; /* Jarak antara bagian prediksi dan tombol */
-        }
-
-        .image-area {
-            width: 400px; /* Lebar area gambar (sesuaikan jika perlu) */
-            height: 250px; /* Tinggi area gambar */
-            border: 1px solid #ccc; /* Border sederhana */
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            background-color: #f9f9f9;
-        }
-
-        .image-area img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain; /* Pertahankan rasio aspek gambar */
-            display: block;
-        }
-
-        .text-area {
-            flex-grow: 1; /* Mengambil sisa ruang yang tersedia */
-            text-align: left; /* Teks rata kiri */
-        }
-
-        .text-area h2 {
-            margin: 0;
-            color: #333; /* Warna teks biasa */
-            font-size: 2.2em; /* Ukuran font lebih besar */
-            white-space: nowrap; /* Mencegah teks wrapping jika terlalu panjang */
-        }
-        /* Bagian paragraf keyakinan dihilangkan */
-        /* .text-area p {
-            margin-top: 10px;
-            color: #666;
-            font-size: 1.2em;
-        } */
-
-        .back-button-group {
-            width: 100%; /* Agar tombol "Back" bisa diatur di sebelah kiri */
-            text-align: left; /* Tombol rata kiri */
-        }
-
-        button {
-            background-color: #e0e0e0; /* Warna abu-abu */
-            color: #333;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #d0d0d0;
-        }
-
-        /* Media Query untuk responsivitas pada layar kecil (misalnya mobile) */
-        @media (max-width: 768px) {
-            .prediction-section {
-                flex-direction: column; /* Ubah menjadi tumpukan vertikal */
-                align-items: center; /* Pusatkan item */
-                gap: 20px;
-            }
-            .image-area {
-                width: 100%; /* Lebar penuh pada mobile */
-                max-width: 300px; /* Batasi lebar gambar */
-            }
-            .text-area {
-                text-align: center; /* Teks di tengah pada mobile */
-            }
-            .text-area h2 {
-                font-size: 1.8em; /* Ukuran font lebih kecil di mobile */
-            }
-            .back-button-group {
-                text-align: center; /* Tombol di tengah pada mobile */
-            }
-        }
+      /* Custom font for Inter, if not already available */
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="prediction-section">
-            <div class="image-area">
-                <img id="result-image" src="{{ image_url }}" alt="Gambar Mangga yang Diprediksi">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 text-gray-800">
+    <div class="bg-white p-8 md:p-12 rounded-xl shadow-xl w-full max-w-2xl flex flex-col items-start">
+        <div class="prediction-section flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-10 w-full mb-8">
+            <div class="image-area w-full md:w-1/2 lg:w-2/5 h-64 md:h-72 border border-gray-300 rounded-lg flex justify-center items-center overflow-hidden bg-gray-50 shadow-sm">
+                <img id="result-image" src="{{ image_url }}" alt="Gambar Mangga yang Diprediksi" class="max-w-full max-h-full object-contain block rounded-lg">
             </div>
-            <div class="text-area">
-                <h2 id="mango-name">{{ prediction }}</h2>
-               
+            <div class="text-area flex-grow text-center md:text-left">
+                <h2 id="mango-name" class="text-4xl md:text-5xl font-extrabold text-blue-700 mb-2 leading-tight">
+                  {{ prediction }}
+                </h2>
+                <!-- If you decide to re-add confidence, uncomment and style this: -->
+                <!-- <p class="text-xl text-gray-600">Kepercayaan: {{ confidence }}%</p> -->
             </div>
         </div>
-        <div class="back-button-group">
-            <button onclick="window.location.href = '/'">Back</button>
+        <div class="back-button-group w-full text-center md:text-left">
+            <button onclick="window.location.href = '/'" class="py-3 px-8 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75">
+                Kembali
+            </button>
         </div>
     </div>
 </body>
