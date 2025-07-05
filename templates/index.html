@@ -1,80 +1,164 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Klasifikasi Mangga</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Custom font for Inter, if not already available */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Klasifikasi Mangga</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for Inter */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom file input styling */
+        .file-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem; /* Space before the process button */
+        }
+        .file-input-button {
+            background-color: #e0e0e0; /* Gray-200 */
+            color: #4a4a4a; /* Gray-700 */
+            font-weight: 600; /* Semibold */
+            padding: 0.75rem 1.5rem; /* py-3 px-6 */
+            border-radius: 9999px; /* rounded-full */
+            cursor: pointer;
+            transition: background-color 0.3s ease-in-out;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+        .file-input-button:hover {
+            background-color: #d0d0d0; /* Darker gray on hover */
+        }
+        .file-name-display {
+            font-size: 0.875rem; /* text-sm */
+            color: #6b7280; /* text-gray-500 */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1;
+            text-align: left;
+        }
+        /* Canvas styling to fit its container */
+        #imageCanvas {
+            max-width: 100%;
+            max-height: 100%;
+            display: block; /* Remove extra space below canvas */
+            object-fit: contain; /* Ensure image fits within canvas without cropping */
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-  <div class="bg-white p-8 md:p-12 rounded-xl shadow-xl w-full max-w-md text-center">
-    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Klasifikasi Varietas Mangga</h1>
-    <p class="text-gray-600 mb-6">Unggah gambar mangga untuk memulai proses prediksi.</p>
+<body class="bg-white min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 md:p-12 rounded-xl w-full max-w-md text-center">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Klasifikasi Varietas Mangga</h1>
+        <p class="text-gray-600 mb-10">Unggah gambar mangga untuk memulai proses prediksi</p>
 
-    <!-- Form Upload dan Prediksi -->
-    <form method="POST" action="/predict" enctype="multipart/form-data">
-      <div id="previewArea" class="mt-6 mb-4 w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden bg-gray-50">
-        {% if image_url %}
-          <img src="{{ image_url }}" alt="Preview Gambar" class="max-w-full max-h-full object-contain rounded-lg">
-        {% else %}
-          <span class="text-gray-500 text-lg">Area Pratinjau Gambar</span>
+        <!-- Form Upload dan Prediksi -->
+        <form method="POST" action="/predict" enctype="multipart/form-data">
+            <div id="previewArea" class="mt-6 mb-4 w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden bg-gray-50">
+                <!-- Canvas will be used for image preview -->
+                <canvas id="imageCanvas" class="max-w-full max-h-full object-contain rounded-lg"></canvas>
+                <span id="canvasPlaceholder" class="text-gray-500 text-lg absolute"></span>
+            </div>
+
+            <div class="file-input-wrapper">
+                <label for="fileInput" class="file-input-button">
+                    Pilih File
+                </label>
+                <span id="fileNameDisplay" class="file-name-display">Tidak ada file yang dipilih</span>
+                <input type="file" name="file" id="fileInput" accept="image/*" required class="hidden">
+            </div>
+            
+            <button type="submit" class="w-full py-3 px-6 bg-gray-200 text-gray-700 font-semibold rounded-full shadow-md hover:bg-gray-300 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75">
+                Proses Gambar
+            </button>
+            {% if error %}
+                <div class="text-red-600 mt-4 font-semibold">{{ error }}</div>
+            {% endif %}
+        </form>
+
+        <!-- Hasil Prediksi (This section would typically be on a results page, but kept here for dynamic update if desired) -->
+        {% if prediction %}
+            <div class="result mt-6 p-4 bg-blue-50 rounded-lg text-left">
+                <strong class="text-blue-800">Prediksi:</strong> <span class="text-gray-700">{{ prediction }}</span><br>
+                <strong class="text-blue-800">Kepercayaan:</strong> <span class="text-gray-700">{{ confidence }}%</span>
+            </div>
         {% endif %}
-      </div>
+    </div>
 
-      <input type="file" name="file" id="fileInput" accept="image/*" required
-             class="block w-full text-sm text-gray-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-full file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100 cursor-pointer">
-      <br>
-      <button type="submit" class="mt-6 w-full py-3 px-6 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
-        🔍 Proses Gambar
-      </button>
-      {% if error %}
-        <div class="text-red-600 mt-4 font-semibold">{{ error }}</div>
-      {% endif %}
-    </form>
+    <script>
+        // JavaScript untuk pratinjau gambar menggunakan canvas
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const canvas = document.getElementById('imageCanvas');
+            const ctx = canvas.getContext('2d');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            const canvasPlaceholder = document.getElementById('canvasPlaceholder');
 
-    <!-- Hasil Prediksi -->
-    {% if prediction %}
-      <div class="result mt-6 p-4 bg-blue-50 rounded-lg text-left">
-        <strong class="text-blue-800">Prediksi:</strong> <span class="text-gray-700">{{ prediction }}</span><br>
-        <strong class="text-blue-800">Kepercayaan:</strong> <span class="text-gray-700">{{ confidence }}%</span>
-      </div>
-    {% endif %}
-  </div>
+            // Clear previous content and placeholder
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvasPlaceholder.textContent = '';
 
-  <script>
-    // JavaScript for image preview
-    document.getElementById('fileInput').addEventListener('change', function(event) {
-      const previewArea = document.getElementById('previewArea');
-      previewArea.innerHTML = ''; // Clear previous content
+            const file = event.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // Set canvas dimensions to match the preview area
+                        const previewArea = document.getElementById('previewArea');
+                        const containerWidth = previewArea.offsetWidth;
+                        const containerHeight = previewArea.offsetHeight;
 
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.alt = "Preview Gambar";
-          img.className = "max-w-full max-h-full object-contain rounded-lg";
-          previewArea.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        previewArea.innerHTML = '<span class="text-gray-500 text-lg">Area Pratinjau Gambar</span>';
-      }
-    });
-  </script>
+                        // Calculate aspect ratios
+                        const imageAspectRatio = img.width / img.height;
+                        const containerAspectRatio = containerWidth / containerHeight;
+
+                        let drawWidth, drawHeight, offsetX, offsetY;
+
+                        if (imageAspectRatio > containerAspectRatio) {
+                            // Image is wider than container, fit by width
+                            drawWidth = containerWidth;
+                            drawHeight = containerWidth / imageAspectRatio;
+                            offsetX = 0;
+                            offsetY = (containerHeight - drawHeight) / 2;
+                        } else {
+                            // Image is taller or same aspect ratio as container, fit by height
+                            drawHeight = containerHeight;
+                            drawWidth = containerHeight * imageAspectRatio;
+                            offsetX = (containerWidth - drawWidth) / 2;
+                            offsetY = 0;
+                        }
+
+                        canvas.width = containerWidth;
+                        canvas.height = containerHeight;
+
+                        // Clear canvas and draw image centered
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                fileNameDisplay.textContent = 'Tidak ada file yang dipilih';
+                // Clear canvas and show placeholder if no file selected
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                canvasPlaceholder.textContent = ''; // Placeholder is empty as per Figma
+            }
+        });
+
+        // Initial setup for canvas placeholder if no image is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvasPlaceholder = document.getElementById('canvasPlaceholder');
+            canvasPlaceholder.textContent = ''; // Placeholder is empty as per Figma
+        });
+    </script>
 </body>
 </html>
