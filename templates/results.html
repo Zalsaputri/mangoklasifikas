@@ -2,35 +2,63 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hasil Klasifikasi Mangga</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Klasifikasi Varietas Mangga</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     body {
       font-family: 'Inter', sans-serif;
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 text-gray-800">
-  <div class="bg-white p-8 md:p-12 rounded-xl shadow-xl w-full max-w-2xl flex flex-col items-start">
-    <div class="prediction-section flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-10 w-full mb-8">
-      <div class="image-area w-full md:w-1/2 lg:w-2/5 h-64 md:h-72 border border-gray-300 rounded-lg flex justify-center items-center overflow-hidden bg-gray-50 shadow-sm">
-        <img id="result-image" src="{{ image_url }}" alt="Gambar Mangga yang Diprediksi" class="max-w-full max-h-full object-contain block rounded-lg">
-      </div>
-      <div class="text-area flex-grow text-center md:text-left">
-        <h2 id="mango-name" class="text-4xl md:text-5xl font-extrabold text-blue-700 mb-2 leading-tight">
-          {{ prediction }}
-        </h2>
-        <p class="text-xl text-gray-600">Validasi: {{ confidence }}%</p>
-      </div>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center px-4 py-8 text-gray-800">
+  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center space-y-6">
+    <h1 class="text-3xl font-bold leading-tight">Klasifikasi Varietas<br>Mangga</h1>
+    <p class="text-gray-500">Unggah gambar mangga untuk memulai proses prediksi.</p>
+
+    <!-- Gambar preview -->
+    {% if image_url %}
+    <div class="w-full border-2 border-dashed border-gray-300 rounded-xl overflow-hidden">
+      <img src="{{ image_url }}" alt="Preview Gambar" class="w-full object-cover">
     </div>
-    <div class="back-button-group w-full text-center md:text-left">
-      <button onclick="window.location.href = '/'" class="py-3 px-8 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75">
-        Kembali
+    {% else %}
+    <div class="w-full aspect-square border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center text-gray-400">
+      [Preview Gambar]
+    </div>
+    {% endif %}
+
+    <!-- Form Upload -->
+    <form action="/predict" method="POST" enctype="multipart/form-data" class="space-y-4">
+      <label class="inline-block bg-blue-50 text-blue-700 font-medium px-4 py-2 rounded-full cursor-pointer hover:bg-blue-100 transition">
+        Choose File
+        <input type="file" name="file" accept="image/*" class="hidden" onchange="this.form.submit()">
+      </label>
+    </form>
+
+    <!-- Tombol Proses -->
+    <form action="/predict" method="POST" enctype="multipart/form-data">
+      <input type="file" name="file" id="fileInput" class="hidden" onchange="previewAndSubmit(this)">
+      <button type="button" onclick="document.getElementById('fileInput').click()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition duration-300">
+        🔍 Proses Gambar
       </button>
+    </form>
+
+    <!-- Hasil prediksi -->
+    {% if prediction %}
+    <div class="bg-blue-50 rounded-lg p-4 text-left mt-4">
+      <p><span class="font-bold text-blue-700">Prediksi:</span> {{ prediction }}</p>
+      <p><span class="font-bold text-blue-700">Kepercayaan:</span> {{ confidence }}%</p>
     </div>
+    {% endif %}
   </div>
+
+  <script>
+    function previewAndSubmit(input) {
+      if (input.files && input.files[0]) {
+        input.form.submit();
+      }
+    }
+  </script>
 </body>
 </html>
-
