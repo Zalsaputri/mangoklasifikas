@@ -61,11 +61,16 @@
 
         <!-- Form Upload dan Prediksi -->
         <form method="POST" action="/predict" enctype="multipart/form-data">
-            <div id="previewArea" class="mt-6 mb-4 w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden bg-gray-50">
-                <!-- Canvas will be used for image preview -->
-                <canvas id="imageCanvas" class="max-w-full max-h-full object-contain rounded-lg"></canvas>
-                <span id="canvasPlaceholder" class="text-gray-500 text-lg absolute"></span>
-            </div>
+            <div id="previewArea" class="mt-6 mb-4 w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden bg-gray-50 relative">
+    {% if image_url %}
+        <!-- Show image from backend -->
+        <img src="{{ image_url }}" alt="Hasil Upload" class="max-w-full max-h-full object-contain rounded-lg">
+    {% else %}
+        <!-- Show canvas preview before upload -->
+        <canvas id="imageCanvas" class="max-w-full max-h-full object-contain rounded-lg"></canvas>
+        <span id="canvasPlaceholder" class="text-gray-500 text-lg absolute"></span>
+        {% endif %}
+    </div>    
 
             <div class="file-input-wrapper">
                 <label for="fileInput" class="file-input-button">
