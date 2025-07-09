@@ -63,12 +63,14 @@ def predict():
         confidence = np.max(probs) * 100
         label = le.inverse_transform([pred_idx])[0]
 
-        return render_template('index.html',
+        # Render ke halaman hasil
+        return render_template('results.html',
                                image_url=image_url,
                                prediction=label,
                                confidence=round(confidence, 2))
     except Exception as e:
         return render_template('index.html', error=f"Gagal memproses gambar: {e}")
+
 
 # ====== Tampilkan Gambar Upload ======
 @app.route('/uploaded_images/<filename>')
