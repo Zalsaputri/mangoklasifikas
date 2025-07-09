@@ -47,10 +47,10 @@ def predict():
         scores = model.decision_function(features)
         probs = np.exp(scores - np.max(scores)) / np.sum(np.exp(scores - np.max(scores)))
         confidence = np.max(probs) * 100
-        label = le.inverse_transform([pred_idx])[0]
+        label = label_encoder.inverse_transform([pred_idx])[0]
 
-        # Kembalikan ke index.html dengan hasil prediksi
-        return render_template('index.html', prediction=label, confidence=round(confidence, 2))
+        # Tampilkan hasil di results.html
+        return render_template('results.html', prediction=label, confidence=round(confidence, 2), image_url=image_url)
 
     except Exception as e:
         return render_template('index.html', error=f"Gagal memproses gambar: {e}")
