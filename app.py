@@ -13,8 +13,8 @@ app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # Maksimal 5 MB
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Load model & encoder
-model = joblib.load('model.pkl')
-le = joblib.load('label_encoder.pkl')
+model = joblib.load('models/svm_model_mangga.pkl')  
+le = joblib.load('models/label_encoder.pkl')       
 IMG_SIZE = 100
 
 @app.route('/')
