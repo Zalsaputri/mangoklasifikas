@@ -51,8 +51,13 @@ def predict():
         confidence = np.max(probs) * 100
         label = label_encoder.inverse_transform([pred_idx])[0]
 
-        # ✅ Kembalikan ke index.html bukan results.html
-        return render_template('index.html', prediction=label, confidence=round(confidence, 2), image_url=image_url)
+        return render_template(
+        'index.html',
+        prediction=label,
+        confidence=round(confidence, 2),
+        image_url=image_url
+    )
+
 
     except Exception as e:
         return render_template('index.html', error=f"Gagal memproses gambar: {e}")
